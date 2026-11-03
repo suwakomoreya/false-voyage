@@ -1,0 +1,30 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Raylib",
+            "type": "process",
+            "command": "C:/msys64/ucrt64/bin/g++.exe",
+            "args": [
+                "-std=c++17",
+                "${file}",
+                "-o",
+                "${workspaceFolder}/game.exe",
+                "-lraylib",
+                "-lopengl32",
+                "-lgdi32",
+                "-lwinmm"
+            ],
+            "options": {
+                "env": {
+                    "PATH": "C:\\msys64\\ucrt64\\bin;${env:PATH}"
+                }
+            },
+            "problemMatcher": ["$gcc"],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
