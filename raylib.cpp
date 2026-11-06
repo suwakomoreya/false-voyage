@@ -21,7 +21,21 @@ int main() {
 
         EndDrawing();
     }
+    
+    bool Button(const char* text, Rectangle rect) {
 
+    Vector2 mouse = GetMousePosition();
+
+    bool hovered = CheckCollisionPointRec(mouse, rect);
+
+    Color color = hovered ? DARKGRAY : GRAY;
+
+    DrawRectangleRec(rect, color);
+
+    DrawText(text, rect.x + 20, rect.y + 20, 25, WHITE);
+
+    return hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
+}
     // Close window
     CloseWindow();
 
