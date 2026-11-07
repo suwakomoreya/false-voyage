@@ -35,7 +35,7 @@ int main() {
     DrawText(text, rect.x + 20, rect.y + 20, 25, WHITE);
 
     return hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT);
-}
+};
     // Close window
     CloseWindow();
 
