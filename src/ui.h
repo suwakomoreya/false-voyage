@@ -17,6 +17,17 @@ std::string inspectionDecision = "";
 int correctships = 0;
 int incorrectships =0;
 int mistakes =0;
+int currentshift=1;
+int shipsprocessed =0;
+float shiftCompleteTimer = 0.0f;
+int getshiftquota(){
+    if(currentshift ==1){
+        return 2;
+    }
+    else{
+        return 2;
+    }
+}
 const int mistakelimit =5;
 void DrawButton(const button& button){
     Vector2 mousepos = GetMousePosition();
@@ -60,11 +71,13 @@ void DrawMainMenu(){
 void HandleMenuInput(GameState& currentstate, Ship& ship){
     if(IsButtonClicked(playbutton)){
         inspectionDecision ="";
-
+        shiftCompleteTimer = 0.0f;
         correctships =0;
         incorrectships =0;
         mistakes=0;
-        ResetShip(ship);
+        currentshift =1;
+        shipsprocessed =0;
+        ResetShip(ship,currentshift);
         currentstate = GameState::Playing;
     }
     if(IsButtonClicked(tutorialbutton)){
@@ -103,7 +116,7 @@ void HandleGameInput(GameState& currentstate, Ship& ship){
     if(IsKeyPressed(KEY_ESCAPE)){
         currentstate = GameState::Menu;
         inspectionDecision = "";
-        ResetShip(ship);
+        ResetShip(ship,currentshift);
     }
 }
 
@@ -174,11 +187,29 @@ void DrawShipInspection(const Ship& ship){
 void GameOverScreen(){
     ClearBackground(BLACK);
     DrawText("Game Over",700,250,70,RED);
-    DrawText(TextFormat("Correct Inspections %i", correctships),750,450,30,WHITE);
-    DrawText(TextFormat("Incorrect Inspections %i", incorrectships),750,500,30, WHITE);
-    DrawText(TextFormat("Total Mistakes %i", mistakes),750,550,30,RED);
+    DrawText(TextFormat("You reached Shift %i", currentshift), 750,380,30,WHITE);
+    DrawText(TextFormat("Correct Inspections %i", correctships),750,460,30,WHITE);
+    DrawText(TextFormat("Incorrect Inspections %i", incorrectships),750,520,30, WHITE);
+    DrawText(TextFormat("Total Mistakes %i", mistakes),750,580,30,RED);
     DrawText("Press enter to return to menu",650,750,25,LIGHTGRAY);
     DrawText("R - Restart game",650,800,25, LIGHTGRAY);
+}
+void Shiftcompletescreen(){
+    ClearBackground(BLACK);
+    DrawText("Shift 1 COMPLETE", 620,250,60,GREEN);
+    DrawText(TextFormat("Ships Processed%i/%i", shipsprocessed, getshiftquota()),700,430,30,WHITE);
+    DrawText(TextFormat("Correct inspections: %i", correctships),700,490,30,WHITE);
+    DrawText(TextFormat("Incorrect Inspections: %i", incorrectships),700,550,30,WHITE);
+    DrawText("Press Enter to begin Shift 2", 650,800,30,LIGHTGRAY);
+}
+void DrawVictoryScreen(){
+    ClearBackground(BLACK);
+    DrawText("Day is over!", 570,220, 65, GREEN);
+    DrawText("You have successsfully completed both shifts",570,350,30,WHITE);
+    DrawText(TextFormat("Ships Processed %i", shipsprocessed + 10), 700,470,30,WHITE);
+    DrawText(TextFormat("Correct inspections: %i", correctships), 700,530,30,WHITE);
+    DrawText(TextFormat("Incorrect Inspections: %i", incorrectships), 700,590,30,WHITE);
+    DrawText("Press enter to return to the menu",650,850,25,LIGHTGRAY);
 }
 void InspectionInput(Ship& ship){
     
@@ -188,7 +219,7 @@ void InspectionInput(Ship& ship){
         
         if(IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)){
             inspectionDecision = "";
-            ResetShip(ship);
+            ResetShip(ship,currentshift);
         }
 
         return;
@@ -199,24 +230,36 @@ void InspectionInput(Ship& ship){
         inspectionDecision = "You authorized the ship";
         ship.playercorrect = isShipAuthentic(ship);
         ship.decisionmade = true;
+        shipsprocessed++;
         if(ship.playercorrect){
             correctships++;
         }
         else{
             incorrectships++;
-            mistakes++;
+            if(currentshift == 2 && isShipAuthentic(ship)){
+                mistakes +=2;
+            }
+            else{
+                mistakes++;
+            }
         }
     }
     else if(IsButtonClicked(fakebutton)){
         inspectionDecision = "You rejected the ship";
         ship.playercorrect = !isShipAuthentic(ship);
         ship.decisionmade = true;
+        shipsprocessed++;
         if(ship.playercorrect){
             correctships++;
         }
         else{
             incorrectships++;
+            if(currentshift == 2 && isShipAuthentic(ship)){
+                mistakes +=2;
+            }
+            else{
             mistakes++;
+            }
         }
         
     }

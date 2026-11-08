@@ -51,8 +51,14 @@ bool isVisualAuthentic(const Ship& ship){
 bool isShipAuthentic(const Ship& ship){
     return ispaperworkauthentic(ship) && isVisualAuthentic(ship);
 }
-void ResetShip(Ship& ship){
+void ResetShip(Ship& ship, int currentshift =1){
     ship.inspectiontimer = 0.0f;
+    if(currentshift ==1){
+        ship.inspectiontimelimit = 20.0f;
+    }
+    else{
+        ship.inspectiontimelimit = 15.0f;
+    }
     ship.inspectiontimelimit = 20.0f;
     ship.bounds.x = -ship.bounds.width;
     ship.inspected = false;
@@ -115,10 +121,20 @@ void ResetShip(Ship& ship){
     };
     std::vector<ShipIdentity> identities = {
         {"Northerne BayLighte", "San Joe"},
-        {"Central Bakerslite", " Mida 'o No Whe"},
+        {"Central Bakerslite", "Mida 'o No Whe"},
         {"East Oaklits", "Crimeland"},
         {"West Pacificalis", "TCBell Cantina"}
     };
+    if(currentshift ==2){
+        std::vector<ShipIdentity> extraidentities = {
+            //newcities
+            {"North York", "New Ballhog"},
+            {"Central Kirkland", "Purifie Aqua"},
+            {"East Mint", "Alto 'ids'"},
+            {"West Tilde", "Above Tabica"}
+        };
+        identities.insert(identities.end(),extraidentities.begin(),extraidentities.end());
+    }
     int identitiesindex = GetRandomValue(0,static_cast<int>(identities.size()-1));
     ship.identity = identities[identitiesindex];
     std::vector<ShipType> types = {
@@ -131,19 +147,38 @@ void ResetShip(Ship& ship){
     ship.declaredtype =ship.type;
     
     //ship.isfake = GetRandomValue(0,1) == 1;
-    if(anomalytype<=4){
-        //normal ship
+    if(currentshift==1) {
+        if(anomalytype <= 4){
+        
+        }
+        else if(anomalytype <=6){
+            ship.paperworkanomaly = true;
+
+        }
+        else if(anomalytype <=8){
+            ship.visualanomaly = true;
+        }
+        else{
+            ship.paperworkanomaly = true;
+            ship.visualanomaly = true;
+        }
     }
-    else if(anomalytype <=6){
-        ship.paperworkanomaly = true;
+    else if(currentshift ==2){
+        if(anomalytype<=2){
+
+        }
+        else if(anomalytype<=5){
+            ship.paperworkanomaly = true;
+        }
+        else if(anomalytype <=7){
+            ship.visualanomaly = true;
+        }
+        else{
+            ship.paperworkanomaly = true;
+            ship.visualanomaly = true;
+        }
     }
-    else if(anomalytype <=8){
-        ship.visualanomaly = true;
-    }
-    else{
-        ship.paperworkanomaly = true;
-        ship.visualanomaly = true;
-    }
+    
     // ship.isfake = anomalytype !=0;
     if(ship.paperworkanomaly){
         int fakeindextype = GetRandomValue(0,static_cast<int>(types.size())-1);
