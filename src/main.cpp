@@ -47,12 +47,44 @@ int main(){
         else if(currentstate == GameState::Tutorial){
             DrawTutorialScreen();
         }
+        if(mistakes>= mistakelimit){
+            currentstate=GameState::Gameover;
+        }
         else if(currentstate == GameState::Playing){
             DrawGameScreen();
+            DrawText(TextFormat("Mistakes: %i", mistakes), 50 ,120,25,RED);
             Drawship(ship);     
             if(ship.inspected){
+                if(!ship.decisionmade && ship.inspectiontimer < ship.inspectiontimelimit){
+                    ship.inspectiontimer += GetFrameTime();
+                    if(ship.inspectiontimer > ship.inspectiontimelimit){
+                        ship.inspectiontimer = ship.inspectiontimelimit;
+                    }
+                }
+                if(ship.inspected && !ship.decisionmade && ship.inspectiontimer >= ship.inspectiontimelimit){
+                    ship.playercorrect = false;
+                    ship.decisionmade = true;
+                    incorrectships++;
+                    mistakes++;
+                    inspectionDecision = "Inspection timeout..";
+                }
+                float timemaining = ship.inspectiontimelimit - ship.inspectiontimer;
+                if(timemaining < 0.0f){
+                    timemaining = 0.0f;
+                }
+                DrawText(TextFormat("Time Remaining %.1f", timemaining), 50, 170,25,YELLOW);
                 DrawShipInspection(ship);
             }       
+        }
+        else if(currentstate == GameState::Gameover){
+            GameOverScreen();
+            if(IsKeyPressed(KEY_ENTER)|| IsKeyPressed(KEY_KP_ENTER)){
+                currentstate = GameState::Menu;
+                correctships =0;
+                incorrectships =0;
+                mistakes =0;
+                ResetShip(ship);
+            }
         }
         EndDrawing();
     }

@@ -30,6 +30,8 @@ struct Ship{
     bool paperworkanomaly = false;
     bool visualanomaly = false;
     float resulttimer = 0.0f;
+    float inspectiontimer = 0.0f;
+    float inspectiontimelimit = 20.0f;
 };
 void UpdateShip(Ship& ship){
     if(ship.inspected) return;
@@ -40,14 +42,26 @@ void UpdateShip(Ship& ship){
         ship.inspected =true;
     }
 }
+bool ispaperworkauthentic(const Ship& ship){
+    return ship.type == ship.declaredtype;
+}
+bool isVisualAuthentic(const Ship& ship){
+    return !ship.visualanomaly;
+}
+bool isShipAuthentic(const Ship& ship){
+    return ispaperworkauthentic(ship) && isVisualAuthentic(ship);
+}
 void ResetShip(Ship& ship){
+    ship.inspectiontimer = 0.0f;
+    ship.inspectiontimelimit = 20.0f;
     ship.bounds.x = -ship.bounds.width;
     ship.inspected = false;
-    int anomalytype = GetRandomValue(0,3);
-    ship.paperworkanomaly = false;
-    ship.visualanomaly = false;
     ship.decisionmade = false;
     ship.playercorrect = false;
+    int anomalytype = GetRandomValue(0,9);
+    ship.paperworkanomaly = false;
+    ship.visualanomaly = false;
+    
     const std::vector<std::string> names = {
         "Southern Baylighte",
         "Central Bakerslite",
@@ -61,7 +75,9 @@ void ResetShip(Ship& ship){
         "TCBell Cantina"
         
     };
-    const std::vector<std::string> cargos = {
+
+
+    /*const std::vector<std::string> cargos = {
         "Industrial supplies",
         "Electronics",
         "Medical Equipment",
@@ -72,6 +88,30 @@ void ResetShip(Ship& ship){
         "Crew Transfer",
         "Emergency Repair",
         "Doomscroll Requests"
+    };*/
+    const std::vector<std::string> cargoCargo ={
+        "Industrial Supplies",
+        "Electronics"
+    };
+    const std::vector<std::string> fishingCargoi = {
+        "Fishing nets",
+        "Fresh catches"
+    };
+    const std::vector<std::string> passengerCargo = {
+        "Passenger luggage",
+        "Food supplies"
+    };
+    const std::vector<std::string> cargoRequests = {
+        "Port Delivery",
+        "Fuel Refill"
+    };
+    const std::vector<std::string> fishingRequets = {
+        "Fishing Permit",
+        "Catches Unloading"
+    };
+    const std::vector<std::string> passengerRequests = {
+        "Touring",
+        "Crew Transfer"
     };
     std::vector<ShipIdentity> identities = {
         {"Northerne BayLighte", "San Joe"},
@@ -91,20 +131,20 @@ void ResetShip(Ship& ship){
     ship.declaredtype =ship.type;
     
     //ship.isfake = GetRandomValue(0,1) == 1;
-    if(anomalytype==0){
+    if(anomalytype<=4){
         //normal ship
     }
-    else if(anomalytype ==1){
+    else if(anomalytype <=6){
         ship.paperworkanomaly = true;
     }
-    else if(anomalytype == 2){
+    else if(anomalytype <=8){
         ship.visualanomaly = true;
     }
     else{
         ship.paperworkanomaly = true;
         ship.visualanomaly = true;
     }
-    ship.isfake = anomalytype !=0;
+    // ship.isfake = anomalytype !=0;
     if(ship.paperworkanomaly){
         int fakeindextype = GetRandomValue(0,static_cast<int>(types.size())-1);
         while(types[fakeindextype] == ship.type){
@@ -125,16 +165,16 @@ void ResetShip(Ship& ship){
     //ship.cargo = cargos[GetRandomValue(0,cargos.size()-1)];
     //ship.request = requests[GetRandomValue(0, static_cast<int>(requests.size())-1)];
     if(ship.declaredtype == Cargo){
-        ship.cargo = cargos[0];
-        ship.request = requests[0];
+        ship.cargo = cargoCargo[GetRandomValue(0, cargoCargo.size()-1)];
+        ship.request = cargoRequests[GetRandomValue(0,cargoRequests.size()-1)];
     }
     else if(ship.declaredtype == Fishing){
-        ship.cargo = cargos[1];
-        ship.request = requests[1];
+        ship.cargo = fishingCargoi[GetRandomValue(0,fishingCargoi.size()-1)];
+        ship.request = fishingRequets[GetRandomValue(0,fishingRequets.size()-1)];
     }
     else if(ship.declaredtype == Passenger){
-        ship.cargo = cargos[2];
-        ship.request = requests[2];
+        ship.cargo = passengerCargo[GetRandomValue(0,passengerCargo.size()-1)];
+        ship.request = passengerRequests[GetRandomValue(0, passengerRequests.size()-1)];
     }
     ship.resulttimer =0.0f;
 }
