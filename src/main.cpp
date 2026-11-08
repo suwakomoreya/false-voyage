@@ -17,7 +17,10 @@ int main(){
     SetTargetFPS(30);
     Texture2D background = LoadTexture("assets/img/lighthouse.png");
     InitMenuButtons();
-    Ship ship = {{-160,600,160,50}, 180.0f};
+    Ship ship;
+    ship.bounds = {-160,600,160,50};
+    ship.speed = {180.0f};
+    ResetShip(ship);
     while(!WindowShouldClose() && currentstate != GameState::Exit){
         // mousepos = GetMousePosition();
         if(currentstate == GameState::Menu){

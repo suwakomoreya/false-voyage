@@ -14,7 +14,8 @@ button exitbutton;
 button realbutton;
 button fakebutton;
 std::string inspectionDecision = "";
-
+int correctships = 0;
+int incorrectships =0;
 
 void DrawButton(const button& button){
     Vector2 mousepos = GetMousePosition();
@@ -90,6 +91,8 @@ void DrawGameScreen(){
 
     DrawLine(1100,350,1100,800,RED);
     DrawText("Inspection point", 1000,350,25,RED);
+    DrawText(TextFormat("Correct: %d", correctships), 1550,30, 25,GREEN);
+    DrawText(TextFormat("Incorrect: %d", incorrectships), 1550, 65,25, RED);
 }
 void HandleGameInput(GameState& currentstate, Ship& ship){
     if(IsKeyPressed(KEY_ESCAPE)){
@@ -97,6 +100,20 @@ void HandleGameInput(GameState& currentstate, Ship& ship){
         inspectionDecision = "";
         ResetShip(ship);
     }
+}
+
+std::string ShipTypeName(ShipType type){
+    if(type==Cargo){
+        return "Cargo";
+    }
+    if(type==Fishing){
+        return "Fishing";
+    }
+    if(type==Passenger) {
+        return "Passenger";
+    }
+    return "unknown";
+
 }
 void DrawShipInspection(const Ship& ship){
     DrawText(TextFormat("Inspected: %d", ship.inspected), 50, 100, 25, WHITE);
@@ -109,12 +126,16 @@ DrawText(TextFormat("Decision made: %d", ship.decisionmade), 50, 130, 25, WHITE)
     DrawRectangle(panelX, panely,panelw,panelh,DARKGRAY);
     DrawRectangleLines(panelX,panely,panelw,panelh,WHITE);
     DrawText("Vessel inspectabiliticationimaybe", panelX+30,panely + 30,35,WHITE);
+    DrawLine(panelX+30,panely+85,panelX+panelw-30,panely+85,GRAY);
+    DrawText(TextFormat("Vessel: %s", ship.identity.name.c_str()),panelX + 40, panely + 120,35,LIGHTGRAY);
 
-    DrawText("Vessel: Northern Baylite", panelX + 40, panely + 120,35,LIGHTGRAY);
-
-    DrawText("Origin: San Fran(cisco)", panelX + 40,panely+200,25,LIGHTGRAY);
-    DrawText("Cargo: industrial supplies", panelX + 40, panely+280,25,LIGHTGRAY);
-    DrawText("Request: Fuel refill", panelX +40,panely+380,22,YELLOW);
+    DrawText(TextFormat("Origin: %s", ship.identity.origin.c_str()), panelX + 40,panely+200,25,LIGHTGRAY);
+    
+    DrawText(TextFormat("Declared type: %s", ShipTypeName(ship.declaredtype).c_str()),panelX+40,panely = 240, 25, LIGHTGRAY);
+    DrawLine(panelX+30,panely+285,panelX+panelw-30,panely+285,GRAY);
+    DrawText("Vessel Details",panelX+40,panely+310,20,GRAY);
+    DrawText(TextFormat("Cargo: %s", ship.cargo.c_str()), panelX + 40, panely+280,25,LIGHTGRAY);
+    DrawText(TextFormat("Request: %s", ship.request.c_str()), panelX +40,panely+380,22,YELLOW);
 
     DrawButton(realbutton);
     DrawButton(fakebutton);
@@ -123,18 +144,28 @@ DrawText(TextFormat("Decision made: %d", ship.decisionmade), 50, 130, 25, WHITE)
         
     }
     if(ship.decisionmade){
+        if(ship.playercorrect){
+            DrawText("CORRECT",850,850,35,GREEN);
+
+        }
+        else{
+            DrawText("INCORRECT!",850,850,35,RED);
+        }
         DrawText("Press enter for the next ship", 650, 950,25,WHITE);
 
     }
 }
 void InspectionInput(Ship& ship){
+    
     if(ship.decisionmade){
-        ship.resulttimer += GetFrameTime();
-        bool skip = IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER);
-        if(skip || ship.resulttimer >= 1.5f){
+        //ship.resulttimer += GetFrameTime();
+        // bool skip = IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER);
+        
+        if(IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)){
             inspectionDecision = "";
             ResetShip(ship);
         }
+
         return;
     }
    
@@ -143,10 +174,22 @@ void InspectionInput(Ship& ship){
         inspectionDecision = "You authorized the ship";
         ship.playercorrect = !ship.isfake;
         ship.decisionmade = true;
+        if(ship.playercorrect){
+            correctships++;
+        }
+        else{
+            incorrectships++;
+        }
     }
     else if(IsButtonClicked(fakebutton)){
         inspectionDecision = "You rejected the ship";
         ship.playercorrect = ship.isfake;
         ship.decisionmade = true;
+        if(ship.playercorrect){
+            correctships++;
+        }
+        else{
+            incorrectships++;
+        }
     }
 }
