@@ -60,6 +60,10 @@ void DrawMainMenu(){
 void HandleMenuInput(GameState& currentstate, Ship& ship){
     if(IsButtonClicked(playbutton)){
         inspectionDecision ="";
+
+        correctships =0;
+        incorrectships =0;
+        mistakes=0;
         ResetShip(ship);
         currentstate = GameState::Playing;
     }
@@ -174,6 +178,7 @@ void GameOverScreen(){
     DrawText(TextFormat("Incorrect Inspections %i", incorrectships),750,500,30, WHITE);
     DrawText(TextFormat("Total Mistakes %i", mistakes),750,550,30,RED);
     DrawText("Press enter to return to menu",650,750,25,LIGHTGRAY);
+    DrawText("R - Restart game",650,800,25, LIGHTGRAY);
 }
 void InspectionInput(Ship& ship){
     
