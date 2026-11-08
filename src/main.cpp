@@ -7,7 +7,7 @@
 
 const int screenwidth = 1920;
 const int screenheight = 1080;
-Vector2 mousepos = GetMousePosition();
+// Vector2 mousepos = GetMousePosition();
 GameState currentstate = GameState::Menu;
 
 
@@ -19,20 +19,25 @@ int main(){
     InitMenuButtons();
     Ship ship = {{-160,600,160,50}, 180.0f};
     while(!WindowShouldClose() && currentstate != GameState::Exit){
-        mousepos = GetMousePosition();
+        // mousepos = GetMousePosition();
         if(currentstate == GameState::Menu){
-            HandleMenuInput(currentstate);
+            HandleMenuInput(currentstate, ship);
         }
         else if(currentstate == GameState::Tutorial){
             HandleTutorialInput(currentstate);
         }
         else if(currentstate == GameState::Playing){
-            HandleGameInput(currentstate);
-            UpdateShip(ship);
+            HandleGameInput(currentstate,ship);
+            if(!ship.inspected){
+                UpdateShip(ship);
+            }
+            if(ship.inspected){
+                InspectionInput(ship);
+            }
         }
         BeginDrawing();
         ClearBackground(BLACK);
-        // DrawTexture(background,0,0,WHITE);
+        // Draw the game
         if(currentstate == GameState::Menu){
             DrawMainMenu();
         }
@@ -41,7 +46,10 @@ int main(){
         }
         else if(currentstate == GameState::Playing){
             DrawGameScreen();
-            Drawship(ship);            
+            Drawship(ship);     
+            if(ship.inspected){
+                DrawShipInspection(ship);
+            }       
         }
         EndDrawing();
     }

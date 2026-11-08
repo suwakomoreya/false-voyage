@@ -2,7 +2,7 @@
 #include "raylib.h"
 #include <string>
 #include "game.h"
-
+#include "ship.h"
 struct button {
     Rectangle bounds;
     std::string texts;
@@ -11,6 +11,9 @@ struct button {
 button playbutton;
 button tutorialbutton;
 button exitbutton;
+button realbutton;
+button fakebutton;
+std::string inspectionDecision = "";
 
 
 void DrawButton(const button& button){
@@ -41,6 +44,8 @@ void InitMenuButtons(){
     tutorialbutton = button{{centerx-buttonwidth/2,starty+100,buttonwidth,buttonheight},"TUTORIAL"};
     exitbutton = button{{centerx-buttonwidth/2,starty+200,buttonwidth,buttonheight}, "EXIT"};
     
+    realbutton ={{600,700,300,75}, "Authorize"};
+    fakebutton ={{1020,700,300,75}, "Reject"};
 }
 
 void DrawMainMenu(){
@@ -50,8 +55,10 @@ void DrawMainMenu(){
     DrawButton(exitbutton);
 };
 
-void HandleMenuInput(GameState& currentstate){
+void HandleMenuInput(GameState& currentstate, Ship& ship){
     if(IsButtonClicked(playbutton)){
+        inspectionDecision ="";
+        ResetShip(ship);
         currentstate = GameState::Playing;
     }
     if(IsButtonClicked(tutorialbutton)){
@@ -81,9 +88,65 @@ void DrawGameScreen(){
     DrawText("Waiting for incoming ships...", GetScreenWidth()/2 - MeasureText("Waiting for incoming ships...", 30)/2,450,30,GRAY);
     DrawText("Esc - Return to menu", 20, 20 ,20,GRAY);
 
+    DrawLine(1100,350,1100,800,RED);
+    DrawText("Inspection point", 1000,350,25,RED);
 }
-void HandleGameInput(GameState& currentstate){
+void HandleGameInput(GameState& currentstate, Ship& ship){
     if(IsKeyPressed(KEY_ESCAPE)){
         currentstate = GameState::Menu;
+        inspectionDecision = "";
+        ResetShip(ship);
+    }
+}
+void DrawShipInspection(const Ship& ship){
+    DrawText(TextFormat("Inspected: %d", ship.inspected), 50, 100, 25, WHITE);
+DrawText(TextFormat("Decision made: %d", ship.decisionmade), 50, 130, 25, WHITE);
+    int panelX = 450;
+    int panely = 250;
+    int panelw = 1020;
+    int panelh = 550;
+
+    DrawRectangle(panelX, panely,panelw,panelh,DARKGRAY);
+    DrawRectangleLines(panelX,panely,panelw,panelh,WHITE);
+    DrawText("Vessel inspectabiliticationimaybe", panelX+30,panely + 30,35,WHITE);
+
+    DrawText("Vessel: Northern Baylite", panelX + 40, panely + 120,35,LIGHTGRAY);
+
+    DrawText("Origin: San Fran(cisco)", panelX + 40,panely+200,25,LIGHTGRAY);
+    DrawText("Cargo: industrial supplies", panelX + 40, panely+280,25,LIGHTGRAY);
+    DrawText("Request: Fuel refill", panelX +40,panely+380,22,YELLOW);
+
+    DrawButton(realbutton);
+    DrawButton(fakebutton);
+    if(!inspectionDecision.empty()){
+        DrawText(inspectionDecision.c_str(),750,850,30,YELLOW);
+        
+    }
+    if(ship.decisionmade){
+        DrawText("Press enter for the next ship", 650, 950,25,WHITE);
+
+    }
+}
+void InspectionInput(Ship& ship){
+    if(ship.decisionmade){
+        ship.resulttimer += GetFrameTime();
+        bool skip = IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER);
+        if(skip || ship.resulttimer >= 1.5f){
+            inspectionDecision = "";
+            ResetShip(ship);
+        }
+        return;
+    }
+   
+
+    if(IsButtonClicked(realbutton)){
+        inspectionDecision = "You authorized the ship";
+        ship.playercorrect = !ship.isfake;
+        ship.decisionmade = true;
+    }
+    else if(IsButtonClicked(fakebutton)){
+        inspectionDecision = "You rejected the ship";
+        ship.playercorrect = ship.isfake;
+        ship.decisionmade = true;
     }
 }
