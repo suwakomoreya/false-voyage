@@ -66,8 +66,8 @@ int main(){
                 Drawship(ship);
                 // drawregistrysidebar();
                 DrawText(TextFormat("Shift %i", currentshift),50,70,30,WHITE);
-                DrawText(TextFormat("Ships: %i/%i", shipsprocessed, getshiftquota()),50,100,25,LIGHTGRAY);
-                DrawText(TextFormat("Mistakes: %i", mistakes),50,140,25, RED);
+                DrawText(TextFormat("Ships: %i/%i", shipsprocessed, getshiftquota()),50,108,25,LIGHTGRAY);
+                DrawText(TextFormat("Mistakes: %i", mistakes),50,141,25, RED);
                 
                 if(ship.inspected){
                     if(!ship.decisionmade && ship.inspectiontimer < ship.inspectiontimelimit){
@@ -92,7 +92,7 @@ int main(){
                     if(timemaining <= 5.0f){
                         timercolor = RED;
                     }
-                    DrawText(TextFormat("Time Remaining %.1f", timemaining),50,170,25, timercolor);
+                    DrawText(TextFormat("Time Remaining: %.1f", timemaining),50,174,25, timercolor);
                     DrawShipInspection(ship);
                 }
                 drawregistrysidebar();

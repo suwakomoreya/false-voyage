@@ -51,9 +51,17 @@ std::vector<VesselClassification> vesselclassification = {
     {"Fishing", "Fishing nets, Fresh Catch"," Fishing Permit, Catch unloading"},
     {"Passenger", "Passenger luggage, food supplies", "Crew transfer, touring"}
 };
+// Registry side panel sits below the two registry buttons (which end at y=170)
+const int registrypanely = 190;
+int registrypanelx(){
+    return GetScreenWidth() - 450;
+}
+void DrawTextCentered(const char* text, int y, int fontsize, Color color){
+    DrawText(text, GetScreenWidth()/2 - MeasureText(text, fontsize)/2, y, fontsize, color);
+}
 button getregistryentrybutton(int index){
-    int panelx = GetScreenWidth() -450;
-    int panely = 150;
+    int panelx = registrypanelx();
+    int panely = registrypanely;
     int buttonwidth = 350;
     int buttonheight = 40;
     int buttonx = panelx+25;
@@ -70,8 +78,8 @@ button getregistryentrybutton(int index){
     return entry;
 }
 button getvesselentrybutton(int index){
-    int panelx = GetScreenWidth()-450;
-    int panely = 150;
+    int panelx = registrypanelx();
+    int panely = registrypanely;
     int buttonwidth = 350;
     int buttonheight = 50;
     int buttonx = panelx+25;
@@ -95,13 +103,13 @@ void handleregistryinput(){
         for(int i =0; i< knownships.size();i++){
             button entry = getregistryentrybutton(i);
             if(IsButtonClicked(entry)){
-                if(selectedvesselindex = -1){
-                    selectedshipindex = i;
-                    break;
+                if(selectedshipindex == i){
+                    selectedshipindex = -1;
                 }
                 else{
-                    selectedvesselindex =i;
+                    selectedshipindex = i;
                 }
+                break;
             }
         }
     }
@@ -145,10 +153,18 @@ void DrawButton(const button& button){
     DrawRectangleRounded(button.bounds,0.15f,8,buttonColor);
     
 
-    int textwidth = MeasureText(button.texts.c_str(),30);
+    // Shrink the font until the label fits inside the button
+    int fontsize = 30;
+    if(fontsize > button.bounds.height - 10){
+        fontsize = button.bounds.height - 10;
+    }
+    while(fontsize > 10 && MeasureText(button.texts.c_str(), fontsize) > button.bounds.width - 20){
+        fontsize--;
+    }
+    int textwidth = MeasureText(button.texts.c_str(),fontsize);
     int textX = button.bounds.x + (button.bounds.width-textwidth)/2;
-    int textY = button.bounds.y + (button.bounds.height - 30)/2;
-    DrawText(button.texts.c_str(),textX,textY,30, WHITE);
+    int textY = button.bounds.y + (button.bounds.height - fontsize)/2;
+    DrawText(button.texts.c_str(),textX,textY,fontsize, WHITE);
 };
 
 bool IsButtonClicked(const button& button){
@@ -170,7 +186,7 @@ void InitMenuButtons(){
     fakebutton ={{1020,700,300,75}, "Reject"};
 }
 void initregistrybuttons(){
-    int buttonwidth = 220;
+    int buttonwidth = 280;
     int buttonheight = 60;
     int x = GetScreenWidth() - buttonwidth -40;
     int y= 30;
@@ -180,7 +196,7 @@ void initregistrybuttons(){
     classificationbutton.bounds = {(float)x,(float)y+80,(float)buttonwidth,(float)buttonheight};
     classificationbutton.texts = "Vessel Classification";
 
-    closeregistrybutton.bounds = {(float)(GetScreenWidth() - 80),160.0f,40.0f,40.0f};
+    closeregistrybutton.bounds = {(float)(GetScreenWidth() - 80),(float)(registrypanely + 10),40.0f,40.0f};
     closeregistrybutton.texts = "X";
     registrybutton = {registrybutton.bounds, registrybutton.texts};
     classificationbutton = {classificationbutton.bounds, classificationbutton.texts};
@@ -221,9 +237,9 @@ void HandleMenuInput(GameState& currentstate, Ship& ship){
 
 void DrawTutorialScreen(){
     DrawText("How to play", GetScreenWidth()/2 - MeasureText("How to play", 50)/2, 200, 50 , WHITE);
-    DrawText("Inspect incoming ships. ", 650, 400, 30, WHITE);
-    DrawText("Decide if a ship is real or not.", 500, 460, 30, WHITE);
-    DrawText("Press ESC to return to menu",600,600,25,GRAY);
+    DrawTextCentered("Inspect incoming ships.", 400, 30, WHITE);
+    DrawTextCentered("Decide if a ship is real or not.", 460, 30, WHITE);
+    DrawTextCentered("Press ESC to return to menu", 600, 25, GRAY);
 
 }
 
@@ -235,13 +251,18 @@ void HandleTutorialInput(GameState& currentstate){
 
 void DrawGameScreen(){
     DrawText("Ship Inspection", GetScreenWidth()/2 - MeasureText("Ship Inspection", 50)/2, 200 ,50 ,WHITE);
-    DrawText("Waiting for incoming ships...", GetScreenWidth()/2 - MeasureText("Waiting for incoming ships...", 30)/2,450,30,GRAY);
+    DrawTextCentered("Waiting for incoming ships...", 290, 30, GRAY);
     DrawText("Esc - Return to menu", 20, 20 ,20,GRAY);
 
-    DrawLine(1100,350,1100,800,RED);
-    DrawText("Inspection point", 1000,350,25,RED);
-    DrawText(TextFormat("Correct: %d", correctships), 1550,30, 25,GREEN);
-    DrawText(TextFormat("Incorrect: %d", incorrectships), 1550, 65,25, RED);
+    DrawLine(1100,395,1100,800,RED);
+    DrawText("Inspection point", 1100 - MeasureText("Inspection point", 25)/2, 360, 25, RED);
+
+    // Right-align the counters so they end before the registry buttons
+    int counterright = (int)registrybutton.bounds.x - 30;
+    const char* correcttext = TextFormat("Correct: %d", correctships);
+    DrawText(correcttext, counterright - MeasureText(correcttext, 25), 30, 25, GREEN);
+    const char* incorrecttext = TextFormat("Incorrect: %d", incorrectships);
+    DrawText(incorrecttext, counterright - MeasureText(incorrecttext, 25), 65, 25, RED);
 
     DrawButton(registrybutton);
     DrawButton(classificationbutton);
@@ -250,8 +271,8 @@ void drawregistrysidebar(){
     if(registrystate == Registrystate::closed){
         return;
     }
-    int panelx = GetScreenWidth()-450;
-    int panely = 150;
+    int panelx = registrypanelx();
+    int panely = registrypanely;
     int panelwidth = 410;
     int panelheight = 750;
 
@@ -261,15 +282,15 @@ void drawregistrysidebar(){
     DrawButton(closeregistrybutton);
     if(registrystate == Registrystate::shipregistry){
         DrawText("Ship Registry", panelx+25,panely+30,28,WHITE);
-        for(int i = 0; i < vesselclassification.size(); i++){
-            button entry = getvesselentrybutton(i);
+        for(int i = 0; i < knownships.size(); i++){
+            button entry = getregistryentrybutton(i);
 
             Vector2 mousepos = GetMousePosition();
             bool hovering = CheckCollisionPointRec(mousepos, entry.bounds);
 
-            Color entrycolor = (selectedvesselindex == i) ? GOLD : WHITE;
+            Color entrycolor = (selectedshipindex == i) ? GOLD : WHITE;
 
-            if(hovering && selectedvesselindex != i){
+            if(hovering && selectedshipindex != i){
                 entrycolor = LIGHTGRAY;
             }
 
@@ -286,18 +307,18 @@ void drawregistrysidebar(){
                 BLACK
             );
         }
-        if(selectedshipindex != -1){
-            int infoy = panely + 520;
-            if(selectedshipindex == -1){
-                DrawText("Select a ship to view its information.", panelx + 25, panely + 520, 18 ,LIGHTGRAY);
-            }
+        int infoy = panely + 520;
+        if(selectedshipindex == -1){
+            DrawText("Select a ship to view its information.", panelx + 25, infoy, 18 ,LIGHTGRAY);
+        }
+        else{
             DrawText("Selected ship", panelx + 25, infoy, 20, YELLOW);
             DrawText(knownships[selectedshipindex].name.c_str(),panelx+25,infoy+30,20,WHITE);
             DrawText(("Origin: " + knownships[selectedshipindex].origin).c_str(),panelx+25,infoy+60,18,LIGHTGRAY);
         }
     }
     else if(registrystate == Registrystate::vesselclassification){
-        DrawText("VesselClassification", panelx+25,panely+30,24,WHITE);
+        DrawText("Vessel Classification", panelx+25,panely+30,24,WHITE);
         for(int i=0;i<vesselclassification.size();i++){
             button entry = getvesselentrybutton(i);
             Color entrycolor = (selectedvesselindex == i) ? GOLD : WHITE;
@@ -309,11 +330,11 @@ void drawregistrysidebar(){
             
         
         }
-        if(selectedvesselindex != -1){
-            int infoy = panely +400;
-            if(selectedvesselindex == -1){
-                DrawText("Select a vessel type to view its details", panelx+25,panely+400,18,LIGHTGRAY);
-            }
+        int infoy = panely +400;
+        if(selectedvesselindex == -1){
+            DrawText("Select a vessel type to view its details", panelx+25,infoy,18,LIGHTGRAY);
+        }
+        else{
             DrawText(vesselclassification[selectedvesselindex].name.c_str(),panelx+25,infoy,25,YELLOW);
             DrawText("Associated Cargo: ", panelx+25,infoy+50,20,WHITE);
             DrawText(vesselclassification[selectedvesselindex].cargo.c_str(),panelx+25,infoy+80,18,LIGHTGRAY);
@@ -369,8 +390,6 @@ std::string ShipTypeName(ShipType type){
 
 }
 void DrawShipInspection(const Ship& ship){
-    DrawText(TextFormat("Inspected: %d", ship.inspected), 50, 100, 25, WHITE);
-    DrawText(TextFormat("Decision made: %d", ship.decisionmade), 50, 130, 25, WHITE); //delete these 2 later
     int panelX = 450;
     int panely = 250;
     int panelw = 1020;
@@ -394,57 +413,55 @@ void DrawShipInspection(const Ship& ship){
 
     DrawLine(panelX+30,panely+285,panelX+panelw-30,panely+285,GRAY);
     DrawText("Vessel Details",panelX+40,panely+310,20,GRAY);
-    DrawText(TextFormat("Cargo: %s", ship.cargo.c_str()), panelX + 40, panely+280,25,LIGHTGRAY);
+    DrawText(TextFormat("Cargo: %s", ship.cargo.c_str()), panelX + 40, panely+340,25,LIGHTGRAY);
     DrawText(TextFormat("Request: %s", ship.request.c_str()), panelX +40,panely+380,22,YELLOW);
 
     DrawButton(realbutton);
     DrawButton(fakebutton);
+    // Stack the result lines under the panel instead of on top of each other
     if(!inspectionDecision.empty()){
-        DrawText(inspectionDecision.c_str(),750,850,30,YELLOW);
-        
+        DrawTextCentered(inspectionDecision.c_str(), 820, 30, YELLOW);
     }
     if(ship.decisionmade){
         if(inspectionDecision == "Inspection timeout..."){
-            DrawText("TIME EXPIRED", 800,850, 35, RED);
+            DrawTextCentered("TIME EXPIRED", 865, 35, RED);
         }
-        else
-        if(ship.playercorrect){
-            DrawText("CORRECT",850,850,35,GREEN);
-
+        else if(ship.playercorrect){
+            DrawTextCentered("CORRECT", 865, 35, GREEN);
         }
         else{
-            DrawText("INCORRECT!",850,850,35,RED);
+            DrawTextCentered("INCORRECT!", 865, 35, RED);
         }
-        DrawText("Press enter for the next ship", 650, 950,25,WHITE);
+        DrawTextCentered("Press enter for the next ship", 925, 25, WHITE);
 
     }
 }
 void GameOverScreen(){
     ClearBackground(BLACK);
-    DrawText("Game Over",700,250,70,RED);
-    DrawText(TextFormat("You reached Shift %i", currentshift), 750,380,30,WHITE);
-    DrawText(TextFormat("Correct Inspections %i", correctships),750,460,30,WHITE);
-    DrawText(TextFormat("Incorrect Inspections %i", incorrectships),750,520,30, WHITE);
-    DrawText(TextFormat("Total Mistakes %i", mistakes),750,580,30,RED);
-    DrawText("Press enter to return to menu",650,750,25,LIGHTGRAY);
-    DrawText("R - Restart game",650,800,25, LIGHTGRAY);
+    DrawTextCentered("Game Over", 250, 70, RED);
+    DrawTextCentered(TextFormat("You reached Shift %i", currentshift), 380, 30, WHITE);
+    DrawTextCentered(TextFormat("Correct Inspections: %i", correctships), 460, 30, WHITE);
+    DrawTextCentered(TextFormat("Incorrect Inspections: %i", incorrectships), 520, 30, WHITE);
+    DrawTextCentered(TextFormat("Total Mistakes: %i", mistakes), 580, 30, RED);
+    DrawTextCentered("Press enter to return to menu", 750, 25, LIGHTGRAY);
+    DrawTextCentered("R - Restart game", 800, 25, LIGHTGRAY);
 }
 void Shiftcompletescreen(){
     ClearBackground(BLACK);
-    DrawText("Shift 1 COMPLETE", 620,250,60,GREEN);
-    DrawText(TextFormat("Ships Processed%i/%i", shipsprocessed, getshiftquota()),700,430,30,WHITE);
-    DrawText(TextFormat("Correct inspections: %i", correctships),700,490,30,WHITE);
-    DrawText(TextFormat("Incorrect Inspections: %i", incorrectships),700,550,30,WHITE);
-    DrawText("Press Enter to begin Shift 2", 650,800,30,LIGHTGRAY);
+    DrawTextCentered("Shift 1 COMPLETE", 250, 60, GREEN);
+    DrawTextCentered(TextFormat("Ships Processed: %i/%i", shipsprocessed, getshiftquota()), 430, 30, WHITE);
+    DrawTextCentered(TextFormat("Correct Inspections: %i", correctships), 490, 30, WHITE);
+    DrawTextCentered(TextFormat("Incorrect Inspections: %i", incorrectships), 550, 30, WHITE);
+    DrawTextCentered("Press Enter to begin Shift 2", 800, 30, LIGHTGRAY);
 }
 void DrawVictoryScreen(){
     ClearBackground(BLACK);
-    DrawText("Day is over!", 570,220, 65, GREEN);
-    DrawText("You have successsfully completed both shifts",570,350,30,WHITE);
-    DrawText(TextFormat("Ships Processed %i", shipsprocessed + 10), 700,470,30,WHITE);
-    DrawText(TextFormat("Correct inspections: %i", correctships), 700,530,30,WHITE);
-    DrawText(TextFormat("Incorrect Inspections: %i", incorrectships), 700,590,30,WHITE);
-    DrawText("Press enter to return to the menu",650,850,25,LIGHTGRAY);
+    DrawTextCentered("Day is over!", 220, 65, GREEN);
+    DrawTextCentered("You have successfully completed both shifts", 350, 30, WHITE);
+    DrawTextCentered(TextFormat("Ships Processed: %i", shipsprocessed + 10), 470, 30, WHITE);
+    DrawTextCentered(TextFormat("Correct Inspections: %i", correctships), 530, 30, WHITE);
+    DrawTextCentered(TextFormat("Incorrect Inspections: %i", incorrectships), 590, 30, WHITE);
+    DrawTextCentered("Press enter to return to the menu", 850, 25, LIGHTGRAY);
 }
 void InspectionInput(Ship& ship){
     
