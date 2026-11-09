@@ -8,6 +8,15 @@ The game relies on your ability to remember attributes such as boat colors, orig
 The application only uses raylibs.
 [Raylibs](https://www.raylib.com/)
 
+Ship classifications:
+Red - Anomaly
+Blue - Fishing
+White - Passenger
+Gray - Cargo
+
+Most of these ships are based off of Californian or East Coast cities.
+
+
 Build:
 pacman -S mingw-w64-ucrt-x86_64-raylib
 C:/msys64/ucrt64/bin/g++.exe -std=c++17 src/main.cpp -o FalseVoyage.exe -lraylib -lopengl32 -lgdi32 -lwinmm 
