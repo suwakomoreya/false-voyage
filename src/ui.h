@@ -3,16 +3,125 @@
 #include <string>
 #include "game.h"
 #include "ship.h"
+#include <vector>
 struct button {
     Rectangle bounds;
     std::string texts;
+    
 };
+bool IsButtonClicked(const button& button);
 
 button playbutton;
 button tutorialbutton;
 button exitbutton;
 button realbutton;
 button fakebutton;
+
+
+
+button registrybutton;
+button classificationbutton;
+button closeregistrybutton;
+enum class Registrystate{
+    closed,
+    shipregistry,
+    vesselclassification
+};
+Registrystate registrystate = Registrystate::closed;
+int selectedshipindex=-1;
+int selectedvesselindex = -1;
+std::vector<ShipIdentity> knownships = {
+    {"Northerne BayLighte", "San Joe"},
+    {"Central Bakerslite", "Mida 'o No Whe"},
+    {"East Oaklits", "Crimeland"},
+    {"West Pacificalis", "TCBell Cantina"},
+
+    {"North York", "New Ballhog"},
+    {"Central Kirkland", "Purifie Aqua"},
+    {"East Mint", "Alto 'ids"},
+    {"West Tilde", "Above Tabica"}
+};
+struct VesselClassification{
+    std::string name;
+    std::string cargo;
+    std::string requests;
+};
+std::vector<VesselClassification> vesselclassification = {
+    {"Cargo", "Industrial Supplies, Electronics"," Port Delivery, Fuel Refill"},
+    {"Fishing", "Fishing nets, Fresh Catch"," Fishing Permit, Catch unloading"},
+    {"Passenger", "Passenger luggage, food supplies", "Crew transfer, touring"}
+};
+button getregistryentrybutton(int index){
+    int panelx = GetScreenWidth() -450;
+    int panely = 150;
+    int buttonwidth = 350;
+    int buttonheight = 40;
+    int buttonx = panelx+25;
+    int buttony = panely + 100 + index * 48;
+
+    button entry;
+    entry.bounds = {
+        (float)buttonx,
+        (float)buttony,
+        (float)buttonwidth,
+        (float)buttonheight
+    };
+    entry.texts = knownships[index].name;
+    return entry;
+}
+button getvesselentrybutton(int index){
+    int panelx = GetScreenWidth()-450;
+    int panely = 150;
+    int buttonwidth = 350;
+    int buttonheight = 50;
+    int buttonx = panelx+25;
+    int buttony = panely+110 + index * 65;
+    button entry;
+    entry.bounds = {(float)buttonx,(float)buttony,(float)buttonwidth,(float)buttonheight};
+    entry.texts = vesselclassification[index].name;
+    return entry;
+}
+void handleregistryinput(){
+    if(registrystate == Registrystate::closed){
+        return;
+    }
+    if(IsButtonClicked(closeregistrybutton)){
+        registrystate = Registrystate::closed;
+        selectedshipindex = -1;
+        selectedvesselindex = -1;
+        return;
+    }
+    if(registrystate == Registrystate::shipregistry){
+        for(int i =0; i< knownships.size();i++){
+            button entry = getregistryentrybutton(i);
+            if(IsButtonClicked(entry)){
+                if(selectedvesselindex = -1){
+                    selectedshipindex = i;
+                    break;
+                }
+                else{
+                    selectedvesselindex =i;
+                }
+            }
+        }
+    }
+    else if(registrystate == Registrystate::vesselclassification){
+
+        for(int i = 0; i < vesselclassification.size(); i++){
+        button entry = getvesselentrybutton(i);
+
+        if(IsButtonClicked(entry)){
+            if(selectedvesselindex == i){
+                selectedvesselindex = -1;
+            }
+            else{
+                selectedvesselindex = i;
+            }
+            break;
+            }
+        }
+    }
+}
 std::string inspectionDecision = "";
 int correctships = 0;
 int incorrectships =0;
@@ -22,10 +131,10 @@ int shipsprocessed =0;
 float shiftCompleteTimer = 0.0f;
 int getshiftquota(){
     if(currentshift ==1){
-        return 2;
+        return 10;
     }
     else{
-        return 2;
+        return 20;
     }
 }
 const int mistakelimit =5;
@@ -60,6 +169,23 @@ void InitMenuButtons(){
     realbutton ={{600,700,300,75}, "Authorize"};
     fakebutton ={{1020,700,300,75}, "Reject"};
 }
+void initregistrybuttons(){
+    int buttonwidth = 220;
+    int buttonheight = 60;
+    int x = GetScreenWidth() - buttonwidth -40;
+    int y= 30;
+    registrybutton.bounds = {(float)x,(float)y,(float)buttonwidth, (float)buttonheight};
+    registrybutton.texts = "Ship Registry";
+    
+    classificationbutton.bounds = {(float)x,(float)y+80,(float)buttonwidth,(float)buttonheight};
+    classificationbutton.texts = "Vessel Classification";
+
+    closeregistrybutton.bounds = {(float)(GetScreenWidth() - 80),160.0f,40.0f,40.0f};
+    closeregistrybutton.texts = "X";
+    registrybutton = {registrybutton.bounds, registrybutton.texts};
+    classificationbutton = {classificationbutton.bounds, classificationbutton.texts};
+    closeregistrybutton = {closeregistrybutton.bounds, closeregistrybutton.texts};
+}
 
 void DrawMainMenu(){
     DrawText("fake voyage", GetScreenWidth()/2-MeasureText("fake voyage",60)/2,250,60,WHITE);
@@ -70,6 +196,10 @@ void DrawMainMenu(){
 
 void HandleMenuInput(GameState& currentstate, Ship& ship){
     if(IsButtonClicked(playbutton)){
+        registrystate = Registrystate::closed;
+        selectedshipindex = -1;
+        selectedvesselindex = -1;
+
         inspectionDecision ="";
         shiftCompleteTimer = 0.0f;
         correctships =0;
@@ -77,6 +207,7 @@ void HandleMenuInput(GameState& currentstate, Ship& ship){
         mistakes=0;
         currentshift =1;
         shipsprocessed =0;
+
         ResetShip(ship,currentshift);
         currentstate = GameState::Playing;
     }
@@ -111,12 +242,116 @@ void DrawGameScreen(){
     DrawText("Inspection point", 1000,350,25,RED);
     DrawText(TextFormat("Correct: %d", correctships), 1550,30, 25,GREEN);
     DrawText(TextFormat("Incorrect: %d", incorrectships), 1550, 65,25, RED);
+
+    DrawButton(registrybutton);
+    DrawButton(classificationbutton);
 }
+void drawregistrysidebar(){
+    if(registrystate == Registrystate::closed){
+        return;
+    }
+    int panelx = GetScreenWidth()-450;
+    int panely = 150;
+    int panelwidth = 410;
+    int panelheight = 750;
+
+    DrawRectangle(panelx,panely,panelwidth,panelheight,DARKGRAY);
+    DrawRectangleLines(panelx,panely,panelwidth,panelheight,WHITE);
+
+    DrawButton(closeregistrybutton);
+    if(registrystate == Registrystate::shipregistry){
+        DrawText("Ship Registry", panelx+25,panely+30,28,WHITE);
+        for(int i = 0; i < vesselclassification.size(); i++){
+            button entry = getvesselentrybutton(i);
+
+            Vector2 mousepos = GetMousePosition();
+            bool hovering = CheckCollisionPointRec(mousepos, entry.bounds);
+
+            Color entrycolor = (selectedvesselindex == i) ? GOLD : WHITE;
+
+            if(hovering && selectedvesselindex != i){
+                entrycolor = LIGHTGRAY;
+            }
+
+            DrawRectangleRec(entry.bounds, entrycolor);
+            DrawRectangleLinesEx(entry.bounds, 2, BLACK);
+
+            int textwidth = MeasureText(entry.texts.c_str(), 20);
+
+            DrawText(
+                entry.texts.c_str(),
+                entry.bounds.x + (entry.bounds.width - textwidth) / 2,
+                entry.bounds.y + 10,
+                20,
+                BLACK
+            );
+        }
+        if(selectedshipindex != -1){
+            int infoy = panely + 520;
+            if(selectedshipindex == -1){
+                DrawText("Select a ship to view its information.", panelx + 25, panely + 520, 18 ,LIGHTGRAY);
+            }
+            DrawText("Selected ship", panelx + 25, infoy, 20, YELLOW);
+            DrawText(knownships[selectedshipindex].name.c_str(),panelx+25,infoy+30,20,WHITE);
+            DrawText(("Origin: " + knownships[selectedshipindex].origin).c_str(),panelx+25,infoy+60,18,LIGHTGRAY);
+        }
+    }
+    else if(registrystate == Registrystate::vesselclassification){
+        DrawText("VesselClassification", panelx+25,panely+30,24,WHITE);
+        for(int i=0;i<vesselclassification.size();i++){
+            button entry = getvesselentrybutton(i);
+            Color entrycolor = (selectedvesselindex == i) ? GOLD : WHITE;
+            DrawRectangleRec(entry.bounds, entrycolor);
+            DrawRectangleLinesEx(entry.bounds,2,BLACK);
+            int textwidth = MeasureText(entry.texts.c_str(),20);
+            DrawText(entry.texts.c_str(),entry.bounds.x + (entry.bounds.width - textwidth)/2, entry.bounds.y + 10, 20, BLACK);
+        
+            
+        
+        }
+        if(selectedvesselindex != -1){
+            int infoy = panely +400;
+            if(selectedvesselindex == -1){
+                DrawText("Select a vessel type to view its details", panelx+25,panely+400,18,LIGHTGRAY);
+            }
+            DrawText(vesselclassification[selectedvesselindex].name.c_str(),panelx+25,infoy,25,YELLOW);
+            DrawText("Associated Cargo: ", panelx+25,infoy+50,20,WHITE);
+            DrawText(vesselclassification[selectedvesselindex].cargo.c_str(),panelx+25,infoy+80,18,LIGHTGRAY);
+            DrawText("Associated Requests:", panelx+25,infoy+130,20,WHITE);
+            DrawText(vesselclassification[selectedvesselindex].requests.c_str(),panelx+25,infoy+160,18,LIGHTGRAY);
+
+        }
+    }
+}
+
 void HandleGameInput(GameState& currentstate, Ship& ship){
     if(IsKeyPressed(KEY_ESCAPE)){
         currentstate = GameState::Menu;
         inspectionDecision = "";
+        registrystate = Registrystate::closed;
+        selectedshipindex = -1;
+        selectedvesselindex = -1;
+
         ResetShip(ship,currentshift);
+    }
+    if(IsButtonClicked(registrybutton)){
+        if(registrystate== Registrystate::shipregistry){
+            registrystate = Registrystate::closed;
+        }
+        else{
+            registrystate = Registrystate::shipregistry;
+            selectedvesselindex = -1;
+        }
+        
+    }
+    if(IsButtonClicked(classificationbutton)){
+        if(registrystate == Registrystate::vesselclassification){
+            registrystate = Registrystate::closed;
+        }
+        else{
+            registrystate = Registrystate::vesselclassification;
+            selectedshipindex = -1;
+        }
     }
 }
 
@@ -151,10 +386,10 @@ void DrawShipInspection(const Ship& ship){
     
     DrawText(TextFormat("Declared type: %s", ShipTypeName(ship.declaredtype).c_str()),panelX+40,panely +240, 25, LIGHTGRAY);
     if(ship.paperworkanomaly){
-        DrawText("anomaly in paperwork", panelX+200,panely+280,25, RED); // REMOVE LATER
+       // DrawText("anomaly in paperwork", panelX+200,panely+280,25, RED); // REMOVE LATER
     }
     if(ship.visualanomaly){
-        DrawText("anomaly in visuala", panelX+200,panely+310,25, RED); // REMOVE LATERR
+       // DrawText("anomaly in visuala", panelX+200,panely+310,25, RED); // REMOVE LATERR
     }
 
     DrawLine(panelX+30,panely+285,panelX+panelw-30,panely+285,GRAY);

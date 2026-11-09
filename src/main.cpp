@@ -13,6 +13,7 @@ GameState currentstate = GameState::Menu;
 
 int main(){
     InitWindow(screenwidth,screenheight, "falsevoyage");
+    initregistrybuttons();
     SetExitKey(KEY_NULL);
     SetTargetFPS(30);
     Texture2D background = LoadTexture("assets/img/lighthouse.png");
@@ -31,10 +32,11 @@ int main(){
         }
         else if(currentstate == GameState::Playing){
             HandleGameInput(currentstate,ship);
+            handleregistryinput();
             if(!ship.inspected){
                 UpdateShip(ship);
             }
-            if(ship.inspected){
+            if(ship.inspected&&registrystate == Registrystate::closed){
                 InspectionInput(ship);
             }
             if(shipsprocessed >= getshiftquota() && !ship.decisionmade == false){
@@ -61,10 +63,12 @@ int main(){
             }
             else{
                 DrawGameScreen();
+                Drawship(ship);
+                // drawregistrysidebar();
                 DrawText(TextFormat("Shift %i", currentshift),50,70,30,WHITE);
                 DrawText(TextFormat("Ships: %i/%i", shipsprocessed, getshiftquota()),50,100,25,LIGHTGRAY);
                 DrawText(TextFormat("Mistakes: %i", mistakes),50,140,25, RED);
-                Drawship(ship);
+                
                 if(ship.inspected){
                     if(!ship.decisionmade && ship.inspectiontimer < ship.inspectiontimelimit){
                         ship.inspectiontimer += GetFrameTime();
@@ -91,6 +95,7 @@ int main(){
                     DrawText(TextFormat("Time Remaining %.1f", timemaining),50,170,25, timercolor);
                     DrawShipInspection(ship);
                 }
+                drawregistrysidebar();
             }
         }
         else if(currentstate == GameState::ShiftComplete){
