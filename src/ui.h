@@ -51,13 +51,15 @@ std::vector<VesselClassification> vesselclassification = {
     {"Fishing", "Fishing nets, Fresh Catch"," Fishing Permit, Catch unloading"},
     {"Passenger", "Passenger luggage, food supplies", "Crew transfer, touring"}
 };
-// Registry side panel sits below the two registry buttons (which end at y=170)
 const int registrypanely = 190;
 int registrypanelx(){
     return GetScreenWidth() - 450;
 }
 void DrawTextCentered(const char* text, int y, int fontsize, Color color){
     DrawText(text, GetScreenWidth()/2 - MeasureText(text, fontsize)/2, y, fontsize, color);
+}
+void DrawTextCenteredAt(const char* text, int centerx, int y, int fontsize, Color color){
+    DrawText(text, centerx - MeasureText(text, fontsize)/2, y, fontsize, color);
 }
 button getregistryentrybutton(int index){
     int panelx = registrypanelx();
@@ -153,7 +155,6 @@ void DrawButton(const button& button){
     DrawRectangleRounded(button.bounds,0.15f,8,buttonColor);
     
 
-    // Shrink the font until the label fits inside the button
     int fontsize = 30;
     if(fontsize > button.bounds.height - 10){
         fontsize = button.bounds.height - 10;
@@ -236,11 +237,43 @@ void HandleMenuInput(GameState& currentstate, Ship& ship){
 }
 
 void DrawTutorialScreen(){
-    DrawText("How to play", GetScreenWidth()/2 - MeasureText("How to play", 50)/2, 200, 50 , WHITE);
-    DrawTextCentered("Inspect incoming ships.", 400, 30, WHITE);
-    DrawTextCentered("Decide if a ship is real or not.", 460, 30, WHITE);
-    DrawTextCentered("Press ESC to return to menu", 600, 25, GRAY);
+    int y = 70;
+    auto heading = [&](const char* text){
+        y += 25;
+        DrawText(text, GetScreenWidth()/2 - MeasureText(text, 32)/2, y, 32, YELLOW);
+        y += 48;
+    };
+    auto line = [&](const char* text){
+        DrawText(text, GetScreenWidth()/2 - MeasureText(text, 26)/2, y, 26, WHITE);
+        y += 38;
+    };
 
+    DrawText("How to play", GetScreenWidth()/2 - MeasureText("How to play", 50)/2, y, 50, WHITE);
+    y += 60;
+
+    heading("YOUR JOB");
+    line("You are the harbor inspector. Ships sail in from the left and stop at the red inspection line.");
+    line("Check each ship, then click Authorize if it is real or Reject if it is fake.");
+
+    heading("SPOTTING A FAKE");
+    line("The inspection panel shows the ship's name, origin, declared type, cargo and request.");
+    line("Watch the ship as it sails in. Its hull color shows what it really is:");
+    line("Gray = Cargo     Blue = Fishing     White = Passenger");
+    line("If the hull color does not match the declared type, the paperwork is fake.");
+    line("A red hull means the ship itself is fake.");
+
+    heading("TOOLS");
+    line("Ship Registry lists every known ship and its home port.");
+    line("Vessel Classification lists the cargo and requests each ship type should have.");
+    line("Close the registry panel before you click Authorize or Reject.");
+
+    heading("RULES");
+    line("Each ship has a time limit. Running out of time counts as a mistake.");
+    line("Shift 1 has 10 ships and Shift 2 has 20. Finish both shifts to win.");
+    line("5 mistakes ends the game. In Shift 2, rejecting a real ship counts as 2 mistakes.");
+    line("After each decision, press Enter for the next ship.");
+
+    DrawText("Press ESC to return to menu", GetScreenWidth()/2 - MeasureText("Press ESC to return to menu", 25)/2, 1015, 25, GRAY);
 }
 
 void HandleTutorialInput(GameState& currentstate){
@@ -254,10 +287,9 @@ void DrawGameScreen(){
     DrawTextCentered("Waiting for incoming ships...", 290, 30, GRAY);
     DrawText("Esc - Return to menu", 20, 20 ,20,GRAY);
 
-    DrawLine(1100,395,1100,800,RED);
+    DrawLine(1100,395,1100,920,RED);
     DrawText("Inspection point", 1100 - MeasureText("Inspection point", 25)/2, 360, 25, RED);
 
-    // Right-align the counters so they end before the registry buttons
     int counterright = (int)registrybutton.bounds.x - 30;
     const char* correcttext = TextFormat("Correct: %d", correctships);
     DrawText(correcttext, counterright - MeasureText(correcttext, 25), 30, 25, GREEN);
@@ -418,21 +450,20 @@ void DrawShipInspection(const Ship& ship){
 
     DrawButton(realbutton);
     DrawButton(fakebutton);
-    // Stack the result lines under the panel instead of on top of each other
     if(!inspectionDecision.empty()){
-        DrawTextCentered(inspectionDecision.c_str(), 820, 30, YELLOW);
+        DrawTextCenteredAt(inspectionDecision.c_str(), 760, 820, 30, YELLOW);
     }
     if(ship.decisionmade){
         if(inspectionDecision == "Inspection timeout..."){
-            DrawTextCentered("TIME EXPIRED", 865, 35, RED);
+            DrawTextCenteredAt("TIME EXPIRED", 760, 865, 35, RED);
         }
         else if(ship.playercorrect){
-            DrawTextCentered("CORRECT", 865, 35, GREEN);
+            DrawTextCenteredAt("CORRECT", 760, 865, 35, GREEN);
         }
         else{
-            DrawTextCentered("INCORRECT!", 865, 35, RED);
+            DrawTextCenteredAt("INCORRECT!", 760, 865, 35, RED);
         }
-        DrawTextCentered("Press enter for the next ship", 925, 25, WHITE);
+        DrawTextCenteredAt("Press enter for the next ship", 760, 925, 25, WHITE);
 
     }
 }
@@ -458,7 +489,7 @@ void DrawVictoryScreen(){
     ClearBackground(BLACK);
     DrawTextCentered("Day is over!", 220, 65, GREEN);
     DrawTextCentered("You have successfully completed both shifts", 350, 30, WHITE);
-    DrawTextCentered(TextFormat("Ships Processed: %i", shipsprocessed + 10), 470, 30, WHITE);
+    DrawTextCentered(TextFormat("Ships Processed: %i", correctships + incorrectships), 470, 30, WHITE);
     DrawTextCentered(TextFormat("Correct Inspections: %i", correctships), 530, 30, WHITE);
     DrawTextCentered(TextFormat("Incorrect Inspections: %i", incorrectships), 590, 30, WHITE);
     DrawTextCentered("Press enter to return to the menu", 850, 25, LIGHTGRAY);
@@ -488,12 +519,7 @@ void InspectionInput(Ship& ship){
         }
         else{
             incorrectships++;
-            if(currentshift == 2 && isShipAuthentic(ship)){
-                mistakes +=2;
-            }
-            else{
-                mistakes++;
-            }
+            mistakes++;
         }
     }
     else if(IsButtonClicked(fakebutton)){

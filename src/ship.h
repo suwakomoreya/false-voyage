@@ -60,7 +60,6 @@ void ResetShip(Ship& ship, int currentshift =1){
     else{
         ship.inspectiontimelimit = 15.0f;
     }
-    ship.inspectiontimelimit = 20.0f;
     ship.bounds.x = -ship.bounds.width;
     ship.inspected = false;
     ship.decisionmade = false;
@@ -131,7 +130,7 @@ void ResetShip(Ship& ship, int currentshift =1){
             //newcities
             {"North York", "New Ballhog"},
             {"Central Kirkland", "Purifie Aqua"},
-            {"East Mint", "Alto 'ids'"},
+            {"East Mint", "Alto 'ids"},
             {"West Tilde", "Above Tabica"}
         };
         identities.insert(identities.end(),extraidentities.begin(),extraidentities.end());
@@ -215,15 +214,12 @@ void ResetShip(Ship& ship, int currentshift =1){
     ship.resulttimer =0.0f;
 }
 
-// filled quad (a,b,c,d in order around the shape). Drawn with both windings so
-// it shows up regardless of raylib's backface culling.
 void DrawQuadAny(Vector2 a, Vector2 b, Vector2 c, Vector2 d, Color color){
     DrawTriangle(a, b, c, color);
     DrawTriangle(a, c, b, color);
     DrawTriangle(a, c, d, color);
     DrawTriangle(a, d, c, color);
 }
-
 Color ShadeColor(Color c, float amount){
     return {(unsigned char)(c.r * amount), (unsigned char)(c.g * amount), (unsigned char)(c.b * amount), c.a};
 }
@@ -232,10 +228,8 @@ void Drawship(const Ship& ship){
     float x = ship.bounds.x;
     float w = ship.bounds.width;
     float h = ship.bounds.height;
-    // gentle bob on the waves
     float y = ship.bounds.y + sinf((float)GetTime() * 2.2f + x * 0.01f) * 3.0f;
 
-    // hull colour tells you the real ship type; red means a visual anomaly
     Color shipcolor = DARKGRAY;
     if(ship.type == Cargo){
         shipcolor = GRAY;
@@ -252,25 +246,20 @@ void Drawship(const Ship& ship){
     Color dark = ShadeColor(shipcolor, 0.6f);
     Color light = ShadeColor(shipcolor, 0.85f);
 
-    // wake behind the ship while it is moving
     if(!ship.inspected){
         for(int i = 1; i <= 4; i++){
             float fade = 0.25f - i * 0.05f;
             DrawEllipse((int)(x - i * 28), (int)(ship.bounds.y + h + 2), 26 - i * 3, 4, Fade(WHITE, fade));
         }
     }
-    // reflection on the water
     DrawRectangle((int)(x + 18), (int)(ship.bounds.y + h + 4), (int)(w - 36), 14, Fade(shipcolor, 0.12f));
 
-    // hull wide deck tapering to a narrower keel, pointed bow on the right
     DrawQuadAny({x, y + 10}, {x + w - 18, y + 10}, {x + w - 30, y + h}, {x + 14, y + h}, shipcolor);
     DrawTriangle({x + w - 18, y + 10}, {x + w - 30, y + h}, {x + w, y + 10}, shipcolor);
     DrawTriangle({x + w - 18, y + 10}, {x + w, y + 10}, {x + w - 30, y + h}, shipcolor);
-    // Waterline stripe and deck rail
     DrawQuadAny({x + 8, y + h - 12}, {x + w - 22, y + h - 12}, {x + w - 30, y + h}, {x + 14, y + h}, dark);
     DrawRectangle((int)x, (int)y + 8, (int)w - 12, 3, dark);
 
-    // cabin with lit windows, funnel and mast
     DrawRectangle((int)(x + 40), (int)(y - 25), 70, 35, light);
     DrawRectangle((int)(x + 40), (int)(y - 25), 70, 4, dark);
     for(int i = 0; i < 3; i++){

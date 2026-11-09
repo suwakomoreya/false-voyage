@@ -19,10 +19,11 @@ int main(){
     Texture2D background = LoadTexture("assets/img/lighthouse.png");
     InitMenuButtons();
     Ship ship;
-    ship.bounds = {-160,600,160,50};
+    ship.bounds = {-160,860,160,50};
     ship.speed = {180.0f};
     ResetShip(ship,currentshift);
     while(!WindowShouldClose() && currentstate != GameState::Exit){
+        GameState framestartstate = currentstate;
         // mousepos = GetMousePosition();
         if(currentstate == GameState::Menu){
             HandleMenuInput(currentstate, ship);
@@ -36,15 +37,33 @@ int main(){
             if(!ship.inspected){
                 UpdateShip(ship);
             }
-            if(ship.inspected&&registrystate == Registrystate::closed){
-                InspectionInput(ship);
-            }
-            if(shipsprocessed >= getshiftquota() && !ship.decisionmade == false){
-                if(currentshift == 1){
-                    currentstate = GameState::ShiftComplete;
+            if(ship.inspected && !ship.decisionmade){
+                ship.inspectiontimer += GetFrameTime();
+                if(ship.inspectiontimer >= ship.inspectiontimelimit){
+                    ship.inspectiontimer = ship.inspectiontimelimit;
+                    ship.playercorrect = false;
+                    ship.decisionmade = true;
+                    shipsprocessed++;
+                    incorrectships++;
+                    mistakes++;
+                    inspectionDecision = "Inspection timeout...";
                 }
-                else{
-                    currentstate = GameState::Victory;
+            }
+            bool nextpressed = ship.decisionmade && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER));
+            if(currentstate == GameState::Playing){
+                if(nextpressed && mistakes >= mistakelimit){
+                    currentstate = GameState::Gameover;
+                }
+                else if(nextpressed && shipsprocessed >= getshiftquota()){
+                    if(currentshift == 1){
+                        currentstate = GameState::ShiftComplete;
+                    }
+                    else{
+                        currentstate = GameState::Victory;
+                    }
+                }
+                else if(ship.inspected && (registrystate == Registrystate::closed || ship.decisionmade)){
+                    InspectionInput(ship);
                 }
             }
         }
@@ -58,50 +77,31 @@ int main(){
             DrawTutorialScreen();
         }
         else if(currentstate == GameState::Playing){
-            if(mistakes >= mistakelimit){
-                currentstate = GameState::Gameover;
-            }
-            else{
-                DrawGameScreen();
-                Drawship(ship);
-                // drawregistrysidebar();
-                DrawText(TextFormat("Shift %i", currentshift),50,70,30,WHITE);
-                DrawText(TextFormat("Ships: %i/%i", shipsprocessed, getshiftquota()),50,108,25,LIGHTGRAY);
-                DrawText(TextFormat("Mistakes: %i", mistakes),50,141,25, RED);
-                
-                if(ship.inspected){
-                    if(!ship.decisionmade && ship.inspectiontimer < ship.inspectiontimelimit){
-                        ship.inspectiontimer += GetFrameTime();
-                        if(ship.inspectiontimer > ship.inspectiontimelimit){
-                            ship.inspectiontimer = ship.inspectiontimelimit;
-                        }
-                    }
-                    if(!ship.decisionmade && ship.inspectiontimer >= ship.inspectiontimelimit){
-                        ship.playercorrect = false;
-                        ship.decisionmade = true;
-                        shipsprocessed++;
-                        incorrectships++;
-                        mistakes++;
-                        inspectionDecision = "Inspection timeout...";
-                    }
-                    float timemaining = ship.inspectiontimelimit - ship.inspectiontimer;
-                    if(timemaining <0.0f){
-                        timemaining = 0.0f;
-                    }
-                    Color timercolor = WHITE;
-                    if(timemaining <= 5.0f){
-                        timercolor = RED;
-                    }
-                    DrawText(TextFormat("Time Remaining: %.1f", timemaining),50,174,25, timercolor);
-                    DrawShipInspection(ship);
+            DrawGameScreen();
+            Drawship(ship);
+            // drawregistrysidebar();
+            DrawText(TextFormat("Shift %i", currentshift),50,70,30,WHITE);
+            DrawText(TextFormat("Ships: %i/%i", shipsprocessed, getshiftquota()),50,108,25,LIGHTGRAY);
+            DrawText(TextFormat("Mistakes: %i", mistakes),50,141,25, RED);
+            
+            if(ship.inspected){
+                float timemaining = ship.inspectiontimelimit - ship.inspectiontimer;
+                if(timemaining <0.0f){
+                    timemaining = 0.0f;
                 }
-                drawregistrysidebar();
+                Color timercolor = WHITE;
+                if(timemaining <= 5.0f){
+                    timercolor = RED;
+                }
+                DrawText(TextFormat("Time Remaining: %.1f", timemaining),50,174,25, timercolor);
+                DrawShipInspection(ship);
             }
+            drawregistrysidebar();
         }
         else if(currentstate == GameState::ShiftComplete){
             shiftCompleteTimer += GetFrameTime();
             Shiftcompletescreen();
-            if(shiftCompleteTimer>= 2.0f &&IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)){
+            if(shiftCompleteTimer >= 2.0f && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER))){
                 currentshift = 2;
                 shipsprocessed =0;
                 inspectionDecision = "";
@@ -112,13 +112,13 @@ int main(){
         }
         else if(currentstate == GameState::Victory){
             DrawVictoryScreen();
-            if(IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER)){
+            if(framestartstate == GameState::Victory && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER))){
                 currentstate = GameState::Menu;
             }
         }
         else if(currentstate == GameState::Gameover){
             GameOverScreen();
-            if(IsKeyPressed(KEY_ENTER)|| IsKeyPressed(KEY_KP_ENTER)){
+            if(framestartstate == GameState::Gameover && (IsKeyPressed(KEY_ENTER) || IsKeyPressed(KEY_KP_ENTER))){
                 currentstate = GameState::Menu;
                 
             }
@@ -129,13 +129,17 @@ int main(){
                 currentshift =1;
                 shipsprocessed =0;
                 inspectionDecision = "";
+                shiftCompleteTimer = 0.0f;
+                registrystate = Registrystate::closed;
+                selectedshipindex = -1;
+                selectedvesselindex = -1;
                 ResetShip(ship,currentshift);
                 currentstate = GameState::Playing;
             }
         }
         EndDrawing();
     }
-    // UnloadTexture(background);
+    UnloadTexture(background);
     CloseWindow();
     return 0;
 }
